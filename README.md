@@ -1,6 +1,6 @@
 # @chriscalo/file
 
-No fuss utility for fetching the contents of a file.
+No-fuss utility for getting the contents of a file.
 
 Installation:
 
