@@ -1,87 +1,99 @@
-import { test } from "node:test";
+import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { file, resolve } from "../index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// resolve() tests
-
-test("resolve() returns absolute path unchanged", () => {
-  const absPath = "/some/absolute/path.txt";
-  assert.equal(resolve(absPath, __filename), absPath);
+test("exports resolve as a function", () => {
+  assert.strictEqual(typeof resolve, "function");
 });
 
-test("resolve() resolves ./ relative path against callerPath", () => {
-  const result = resolve("./test.md", __filename);
-  assert.equal(result, path.join(__dirname, "test.md"));
+test("exports file as a function", () => {
+  assert.strictEqual(typeof file, "function");
 });
 
-test("resolve() resolves ../ relative path against callerPath", () => {
-  const result = resolve("../index.js", __filename);
-  assert.equal(result, path.join(__dirname, "..", "index.js"));
+describe("resolve()", () => {
+  test("has correct name", () => {
+    assert.strictEqual(resolve.name, "resolve");
+  });
+
+  test("returns a string", () => {
+    const actual = resolve("/some/path.txt", __filename);
+    assert.strictEqual(typeof actual, "string");
+  });
+
+  test("returns absolute path unchanged", () => {
+    const expected = "/some/absolute/path.txt";
+    const actual = resolve(expected, __filename);
+    assert.strictEqual(actual, expected);
+  });
+
+  test("resolves ./ path against callerPath directory", () => {
+    const expected = path.join(__dirname, "test.md");
+    const actual = resolve("./test.md", __filename);
+    assert.strictEqual(actual, expected);
+  });
+
+  test("resolves ../ path against callerPath directory", () => {
+    const expected = path.join(__dirname, "..", "index.js");
+    const actual = resolve("../index.js", __filename);
+    assert.strictEqual(actual, expected);
+  });
+
+  test("resolves nested relative path against callerPath directory", () => {
+    const expected = path.join(__dirname, "subdir", "foo.txt");
+    const actual = resolve("./subdir/foo.txt", __filename);
+    assert.strictEqual(actual, expected);
+  });
+
+  test("resolves built-in module specifier", () => {
+    const expected = "path";
+    const actual = resolve("path", __filename);
+    assert.strictEqual(actual, expected);
+  });
+
+  test("resolves relative path against calling file when callerPath is omitted", () => {
+    const expected = path.join(__dirname, "test.md");
+    const actual = resolve("./test.md");
+    assert.strictEqual(actual, expected);
+  });
 });
 
-test("resolve() resolves nested relative path against callerPath", () => {
-  const result = resolve("./subdir/foo.txt", __filename);
-  assert.equal(result, path.join(__dirname, "subdir", "foo.txt"));
-});
+describe("file()", () => {
+  test("has correct name", () => {
+    assert.strictEqual(file.name, "file");
+  });
 
-test("resolve() resolves module path via require.resolve", () => {
-  const result = resolve("path", __filename);
-  assert.equal(typeof result, "string");
-  assert.ok(result.length > 0);
-});
+  test("returns a string", () => {
+    const actual = file("./test.md");
+    assert.strictEqual(typeof actual, "string");
+  });
 
-test("resolve() resolves 'fs' module path", () => {
-  const result = resolve("fs", __filename);
-  assert.equal(typeof result, "string");
-  assert.ok(result.length > 0);
-});
+  test("returns the file content", () => {
+    const expected = "# This is a Markdown file\n\nYay\n";
+    const actual = file("./test.md");
+    assert.strictEqual(actual, expected);
+  });
 
-test("resolve() infers callerPath from stack when not provided", () => {
-  const result = resolve("./test.md");
-  assert.equal(result, path.join(__dirname, "test.md"));
-});
+  test("accepts an absolute path", () => {
+    const absPath = path.join(__dirname, "test.md");
+    const expected = "# This is a Markdown file\n\nYay\n";
+    const actual = file(absPath);
+    assert.strictEqual(actual, expected);
+  });
 
-// file() tests
+  test("returns a Buffer when encoding is null", () => {
+    const actual = file("./test.md", { encoding: null });
+    assert.ok(Buffer.isBuffer(actual));
+  });
 
-test("file() reads file as a string", () => {
-  const content = file("./test.md");
-  assert.equal(typeof content, "string");
-  assert.ok(content.length > 0);
-});
-
-test("file() content matches fs.readFileSync output", () => {
-  const content = file("./test.md");
-  const expected = fs.readFileSync(path.join(__dirname, "test.md"), "utf-8");
-  assert.equal(content, expected);
-});
-
-test("file() reads file using an absolute path", () => {
-  const absPath = path.join(__dirname, "test.md");
-  const content = file(absPath);
-  const expected = fs.readFileSync(absPath, "utf-8");
-  assert.equal(content, expected);
-});
-
-test("file() accepts encoding option", () => {
-  const content = file("./test.md", { encoding: "utf-8" });
-  assert.equal(typeof content, "string");
-  assert.ok(content.length > 0);
-});
-
-test("file() returns a Buffer when encoding is null", () => {
-  const content = file("./test.md", { encoding: null });
-  assert.ok(Buffer.isBuffer(content));
-});
-
-test("file() throws for a non-existent file", () => {
-  assert.throws(() => file("./does-not-exist-xyz.txt"), {
-    code: "ENOENT",
+  test("throws ENOENT for a non-existent file", () => {
+    assert.throws(() => file("./does-not-exist-xyz.txt"), {
+      code: "ENOENT",
+    });
   });
 });
