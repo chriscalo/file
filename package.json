@@ -11,10 +11,6 @@
   "author": "Chris Calo <chris.calo@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "test": "ava --verbose",
-    "test:watch": "ava --verbose --watch"
-  },
-  "devDependencies": {
-    "ava": "^6.0.0"
+    "test": "node --test"
   }
 }

@@ -1,9 +1,10 @@
-import test from "ava";
+import { test } from "node:test";
+import assert from "node:assert/strict";
 
-import { file, resolve } from "../index.js";
+import { file } from "../index.js";
 
-test("reads files", t => {
+test("reads files", () => {
   const markdownFile = file("./test.md");
-  t.is(typeof markdownFile, "string");
-  t.truthy(markdownFile.length > 0);
+  assert.equal(typeof markdownFile, "string");
+  assert.ok(markdownFile.length > 0);
 });
