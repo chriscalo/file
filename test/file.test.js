@@ -1,9 +1,9 @@
 import test from "ava";
 
-import { file, resolve } from "../";
+import { file, resolve } from "../index.js";
 
-test("reads files", ({ is, truthy }) => {
+test("reads files", t => {
   const markdownFile = file("./test.md");
-  is(typeof markdownFile, "string");
-  truthy(markdownFile.length > 0);
+  t.is(typeof markdownFile, "string");
+  t.truthy(markdownFile.length > 0);
 });
