@@ -6,8 +6,6 @@ Installation:
 
 ``` sh
 npm install @chriscalo/file
-# or
-yarn add @chriscalo/file
 ```
 
 Works for relative paths, absolute paths, and module paths (`node_modules` folder).
