@@ -9,26 +9,36 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 test("exports file as a function", () => {
-  assert.strictEqual(typeof file, "function");
+  const expected = "function";
+  const actual = typeof file;
+  assert.strictEqual(actual, expected);
 });
 
 test("exports file as the default export", () => {
-  assert.strictEqual(fileDefault, file);
+  const expected = file;
+  const actual = fileDefault;
+  assert.strictEqual(actual, expected);
 });
 
 test("exports resolve as a function", () => {
-  assert.strictEqual(typeof resolve, "function");
+  const expected = "function";
+  const actual = typeof resolve;
+  assert.strictEqual(actual, expected);
 });
 
 
 describe("resolve()", () => {
   test("has correct name", () => {
-    assert.strictEqual(resolve.name, "resolve");
+    const expected = "resolve";
+    const actual = resolve.name;
+    assert.strictEqual(actual, expected);
   });
 
   test("returns a string", () => {
-    const actual = resolve("/some/path.txt", __filename);
-    assert.strictEqual(typeof actual, "string");
+    const result = resolve("/some/path.txt", __filename);
+    const expected = "string";
+    const actual = typeof result;
+    assert.strictEqual(actual, expected);
   });
 
   test("returns absolute path unchanged", () => {
@@ -62,18 +72,26 @@ describe("resolve()", () => {
   });
 
   test("resolves npm package entry point to absolute path", () => {
-    const result = resolve("caller", __filename);
-    assert.ok(path.isAbsolute(result), `expected absolute path, got: ${result}`);
-    assert.ok(result.includes("node_modules/caller"), `expected path inside node_modules/caller, got: ${result}`);
+    const actual = resolve("caller", __filename);
+    assert.ok(path.isAbsolute(actual));
+  });
+
+  test("resolves npm package entry point to node_modules path", () => {
+    const actual = resolve("caller", __filename);
+    assert.ok(actual.includes("node_modules/caller"));
   });
 
   test("resolves npm package sub-path to absolute path", () => {
-    const result = resolve("caller/package.json", __filename);
-    assert.ok(path.isAbsolute(result), `expected absolute path, got: ${result}`);
-    assert.ok(result.endsWith("/caller/package.json"), `expected path ending with /caller/package.json, got: ${result}`);
+    const actual = resolve("caller/package.json", __filename);
+    assert.ok(path.isAbsolute(actual));
   });
 
-  test("resolves relative path against calling file when callerPath is omitted", () => {
+  test("resolves npm package sub-path to correct file", () => {
+    const actual = resolve("caller/package.json", __filename);
+    assert.ok(actual.endsWith("/caller/package.json"));
+  });
+
+  test("uses caller's directory when callerPath is omitted", () => {
     const expected = path.join(__dirname, "test.md");
     const actual = resolve("./test.md");
     assert.strictEqual(actual, expected);
@@ -83,12 +101,16 @@ describe("resolve()", () => {
 
 describe("file()", () => {
   test("has correct name", () => {
-    assert.strictEqual(file.name, "file");
+    const expected = "file";
+    const actual = file.name;
+    assert.strictEqual(actual, expected);
   });
 
   test("returns a string", () => {
-    const actual = file("./test.md");
-    assert.strictEqual(typeof actual, "string");
+    const result = file("./test.md");
+    const expected = "string";
+    const actual = typeof result;
+    assert.strictEqual(actual, expected);
   });
 
   test("returns the file content", () => {
@@ -109,11 +131,19 @@ describe("file()", () => {
     assert.ok(Buffer.isBuffer(actual));
   });
 
-  test("reads file from npm package path", () => {
+  test("returns a string for npm package path", () => {
+    const result = file("caller/package.json");
+    const expected = "string";
+    const actual = typeof result;
+    assert.strictEqual(actual, expected);
+  });
+
+  test("reads correct file from npm package path", () => {
     const content = file("caller/package.json");
-    assert.strictEqual(typeof content, "string");
     const pkg = JSON.parse(content);
-    assert.strictEqual(pkg.name, "caller");
+    const expected = "caller";
+    const actual = pkg.name;
+    assert.strictEqual(actual, expected);
   });
 
   test("throws ENOENT for a non-existent file", () => {
@@ -122,5 +152,3 @@ describe("file()", () => {
     });
   });
 });
-
-
