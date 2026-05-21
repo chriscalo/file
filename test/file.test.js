@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { file, resolve, path as pathTag } from "../index.js";
+import { writeFile, mkdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { file, resolve, path as pathTag, glob, usingTempDir, waitUntilFileExists } from "../index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +20,18 @@ test("exports file as a function", () => {
 
 test("exports path as a function", () => {
   assert.strictEqual(typeof pathTag, "function");
+});
+
+test("exports glob as a function", () => {
+  assert.strictEqual(typeof glob, "function");
+});
+
+test("exports usingTempDir as a function", () => {
+  assert.strictEqual(typeof usingTempDir, "function");
+});
+
+test("exports waitUntilFileExists as a function", () => {
+  assert.strictEqual(typeof waitUntilFileExists, "function");
 });
 
 describe("resolve()", () => {
@@ -116,6 +130,98 @@ describe("file()", () => {
   test("throws ENOENT for a non-existent file", () => {
     assert.throws(() => file("./does-not-exist-xyz.txt"), {
       code: "ENOENT",
+    });
+  });
+});
+
+describe("glob()", () => {
+  test("has correct name", () => {
+    assert.strictEqual(glob.name, "glob");
+  });
+
+  test("returns an array", () => {
+    const result = glob("**/*.md");
+    assert.ok(Array.isArray(result));
+  });
+
+  test("matches files by pattern", () => {
+    const result = glob("test/*.md");
+    assert.ok(result.some((p) => p.endsWith("test.md")));
+  });
+
+  test("accepts multiple patterns", () => {
+    const result = glob("test/*.md", "*.json");
+    assert.ok(result.some((p) => p.endsWith(".md")));
+    assert.ok(result.some((p) => p.endsWith(".json")));
+  });
+
+  test("supports exclusion patterns", () => {
+    const withAll = glob("test/*");
+    const withExclusion = glob("test/*", "!test/*.md");
+    assert.ok(withExclusion.length < withAll.length);
+  });
+});
+
+describe("usingTempDir()", () => {
+  test("has correct name", () => {
+    assert.strictEqual(usingTempDir.name, "usingTempDir");
+  });
+
+  test("provides a string path to useFn", async () => {
+    await usingTempDir((tempDir) => {
+      assert.strictEqual(typeof tempDir, "string");
+    });
+  });
+
+  test("the temp directory exists during useFn", async () => {
+    await usingTempDir((tempDir) => {
+      assert.ok(existsSync(tempDir));
+    });
+  });
+
+  test("the temp directory is removed after useFn", async () => {
+    let capturedPath;
+    await usingTempDir((tempDir) => {
+      capturedPath = tempDir;
+    });
+    assert.ok(!existsSync(capturedPath));
+  });
+
+  test("returns the value from useFn", async () => {
+    const result = await usingTempDir(() => "sentinel");
+    assert.strictEqual(result, "sentinel");
+  });
+});
+
+describe("waitUntilFileExists()", () => {
+  test("has correct name", () => {
+    assert.strictEqual(waitUntilFileExists.name, "waitUntilFileExists");
+  });
+
+  test("resolves immediately when file already exists", async () => {
+    await usingTempDir(async (tempDir) => {
+      const filePath = path.join(tempDir, "existing.txt");
+      await writeFile(filePath, "");
+      await waitUntilFileExists(filePath);
+    });
+  });
+
+  test("waits for a file that appears asynchronously", async () => {
+    await usingTempDir(async (tempDir) => {
+      const filePath = path.join(tempDir, "delayed.txt");
+      setTimeout(() => writeFile(filePath, ""), 100);
+      await waitUntilFileExists(filePath, 2000);
+      assert.ok(existsSync(filePath));
+    });
+  });
+
+  test("throws when timeout is exceeded", async () => {
+    await usingTempDir(async (tempDir) => {
+      const filePath = path.join(tempDir, "never.txt");
+      await assert.rejects(
+        () => waitUntilFileExists(filePath, 100),
+        /Timeout exceeded/,
+      );
     });
   });
 });
