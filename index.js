@@ -1,29 +1,23 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { createRequire } from "module";
+import { readFileSync } from "node:fs";
+import { dirname, isAbsolute, join, resolve as pathResolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
-const _thisFile = fileURLToPath(import.meta.url);
+const _require = createRequire(import.meta.url);
+const _caller = _require("caller");
 
-function getCallerPath() {
-  const frames = new Error().stack.split('\n');
-  for (const frame of frames.slice(1)) {
-    const match = frame.match(/\(?(file:\/\/[^\s:)]+)/);
-    if (match) {
-      try {
-        const filePath = fileURLToPath(match[1]);
-        if (filePath !== _thisFile) {
-          return filePath;
-        }
-      } catch {}
-    }
+function toFilePath(callerUrl) {
+  try {
+    return fileURLToPath(callerUrl);
+  } catch {
+    return callerUrl;
   }
-  return null;
 }
 
 export function file(filePath, options = {}) {
-  const absolutePath = resolve(filePath, getCallerPath());
-  return fs.readFileSync(absolutePath, {
+  const callerPath = toFilePath(_caller());
+  const absolutePath = resolve(filePath, callerPath);
+  return readFileSync(absolutePath, {
     encoding: "utf-8",
     ...options,
   });
@@ -31,29 +25,32 @@ export function file(filePath, options = {}) {
 
 export default file;
 
-// Three cases:
-// 1. absolute path (starts with /) => use as is
-// 2. relative path (starts with ./ or ../) => use path.resolve()
-// 3. module path: use require.resolve()
 export function resolve(pathString, callerPath) {
   if (callerPath === undefined) {
-    callerPath = getCallerPath();
+    callerPath = toFilePath(_caller());
   }
 
-  const { dir } = path.parse(pathString);
-  const isAbsolute = path.isAbsolute(pathString);
-  const isRelative = !isAbsolute && String(dir).startsWith(".");
-  const isModule = !isAbsolute && !isRelative;
-
-  if (isAbsolute) {
+  if (isAbsolute(pathString)) {
     return pathString;
-  } else if (isRelative) {
-    const callerDir = path.dirname(callerPath);
-    return path.resolve(callerDir, pathString);
-  } else if (isModule) {
-    return createRequire(callerPath).resolve(pathString);
-  } else {
-    const msg = `Can't resolve absolute path: ${pathString}`;
-    throw new Error(msg);
   }
+
+  const isRelative = pathString.startsWith("./") || pathString.startsWith("../");
+
+  if (isRelative) {
+    return pathResolve(dirname(callerPath), pathString);
+  } else {
+    return createRequire(callerPath).resolve(pathString);
+  }
+}
+
+export function path(strings, ...values) {
+  const maxLength = Math.max(strings.length, values.length);
+  const parts = [];
+  let i = 0;
+  while (i < maxLength) {
+    if (i < strings.length) parts.push(strings[i]);
+    if (i < values.length) parts.push(values[i]);
+    i++;
+  }
+  return join(...parts);
 }

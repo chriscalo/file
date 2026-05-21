@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { file, resolve } from "../index.js";
+import { file, resolve, path as pathTag } from "../index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +14,10 @@ test("exports resolve as a function", () => {
 
 test("exports file as a function", () => {
   assert.strictEqual(typeof file, "function");
+});
+
+test("exports path as a function", () => {
+  assert.strictEqual(typeof pathTag, "function");
 });
 
 describe("resolve()", () => {
@@ -60,6 +64,24 @@ describe("resolve()", () => {
     const expected = path.join(__dirname, "test.md");
     const actual = resolve("./test.md");
     assert.strictEqual(actual, expected);
+  });
+});
+
+describe("path()", () => {
+  test("has correct name", () => {
+    assert.strictEqual(pathTag.name, "path");
+  });
+
+  test("joins path segments from template literal", () => {
+    const dir = "foo";
+    const file = "bar.txt";
+    const actual = pathTag`${dir}/${file}`;
+    assert.strictEqual(actual, "foo/bar.txt");
+  });
+
+  test("works with static path strings", () => {
+    const actual = pathTag`foo/bar/baz.txt`;
+    assert.strictEqual(actual, "foo/bar/baz.txt");
   });
 });
 

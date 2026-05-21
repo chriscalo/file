@@ -12,5 +12,8 @@
   "license": "MIT",
   "scripts": {
     "test": "node --test"
+  },
+  "dependencies": {
+    "caller": "^1.1.0"
   }
 }
