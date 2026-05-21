@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "caller": "^1.1.0",
-    "fast-glob": "^3.3.3",
-    "tempy": "^3.1.0"
+    "fast-glob": "^3.3.3"
   }
 }

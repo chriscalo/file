@@ -3,9 +3,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { file, resolve, path as pathTag, glob, usingTempDir, waitUntilFileExists } from "../index.js";
+import { file, resolve, path as pathTag, glob } from "../index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,13 +24,6 @@ test("exports glob as a function", () => {
   assert.strictEqual(typeof glob, "function");
 });
 
-test("exports usingTempDir as a function", () => {
-  assert.strictEqual(typeof usingTempDir, "function");
-});
-
-test("exports waitUntilFileExists as a function", () => {
-  assert.strictEqual(typeof waitUntilFileExists, "function");
-});
 
 describe("resolve()", () => {
   test("has correct name", () => {
@@ -162,66 +153,3 @@ describe("glob()", () => {
   });
 });
 
-describe("usingTempDir()", () => {
-  test("has correct name", () => {
-    assert.strictEqual(usingTempDir.name, "usingTempDir");
-  });
-
-  test("provides a string path to useFn", async () => {
-    await usingTempDir((tempDir) => {
-      assert.strictEqual(typeof tempDir, "string");
-    });
-  });
-
-  test("the temp directory exists during useFn", async () => {
-    await usingTempDir((tempDir) => {
-      assert.ok(existsSync(tempDir));
-    });
-  });
-
-  test("the temp directory is removed after useFn", async () => {
-    let capturedPath;
-    await usingTempDir((tempDir) => {
-      capturedPath = tempDir;
-    });
-    assert.ok(!existsSync(capturedPath));
-  });
-
-  test("returns the value from useFn", async () => {
-    const result = await usingTempDir(() => "sentinel");
-    assert.strictEqual(result, "sentinel");
-  });
-});
-
-describe("waitUntilFileExists()", () => {
-  test("has correct name", () => {
-    assert.strictEqual(waitUntilFileExists.name, "waitUntilFileExists");
-  });
-
-  test("resolves immediately when file already exists", async () => {
-    await usingTempDir(async (tempDir) => {
-      const filePath = path.join(tempDir, "existing.txt");
-      await writeFile(filePath, "");
-      await waitUntilFileExists(filePath);
-    });
-  });
-
-  test("waits for a file that appears asynchronously", async () => {
-    await usingTempDir(async (tempDir) => {
-      const filePath = path.join(tempDir, "delayed.txt");
-      setTimeout(() => writeFile(filePath, ""), 100);
-      await waitUntilFileExists(filePath, 2000);
-      assert.ok(existsSync(filePath));
-    });
-  });
-
-  test("throws when timeout is exceeded", async () => {
-    await usingTempDir(async (tempDir) => {
-      const filePath = path.join(tempDir, "never.txt");
-      await assert.rejects(
-        () => waitUntilFileExists(filePath, 100),
-        /Timeout exceeded/,
-      );
-    });
-  });
-});
