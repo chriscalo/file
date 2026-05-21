@@ -25,6 +25,10 @@ export function file(filePath, options = {}) {
 
 export default file;
 
+// Three cases:
+// 1. absolute path (starts with /) => use as is
+// 2. relative path (starts with ./ or ../) => use path.resolve()
+// 3. module path => use require.resolve() for node_modules lookup
 export function resolve(pathString, callerPath) {
   if (callerPath === undefined) {
     callerPath = toFilePath(_caller());
