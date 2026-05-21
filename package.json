@@ -12,5 +12,8 @@
   "license": "MIT",
   "scripts": {
     "test": "node --test"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   }
 }
