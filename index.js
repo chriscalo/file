@@ -1,8 +1,7 @@
 import { readFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve as pathResolve } from "node:path";
+import { dirname, isAbsolute, resolve as pathResolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
-import fastGlob from "fast-glob";
 
 const _require = createRequire(import.meta.url);
 const _caller = _require("caller");
@@ -42,21 +41,5 @@ export function resolve(pathString, callerPath) {
   } else {
     return createRequire(callerPath).resolve(pathString);
   }
-}
-
-export function path(strings, ...values) {
-  const maxLength = Math.max(strings.length, values.length);
-  const parts = [];
-  let i = 0;
-  while (i < maxLength) {
-    if (i < strings.length) parts.push(strings[i]);
-    if (i < values.length) parts.push(values[i]);
-    i++;
-  }
-  return join(...parts);
-}
-
-export function glob(...patterns) {
-  return fastGlob.sync(patterns);
 }
 

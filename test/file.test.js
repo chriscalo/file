@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { file, resolve, path as pathTag, glob } from "../index.js";
+import { file, resolve } from "../index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,14 +14,6 @@ test("exports resolve as a function", () => {
 
 test("exports file as a function", () => {
   assert.strictEqual(typeof file, "function");
-});
-
-test("exports path as a function", () => {
-  assert.strictEqual(typeof pathTag, "function");
-});
-
-test("exports glob as a function", () => {
-  assert.strictEqual(typeof glob, "function");
 });
 
 
@@ -72,23 +64,6 @@ describe("resolve()", () => {
   });
 });
 
-describe("path()", () => {
-  test("has correct name", () => {
-    assert.strictEqual(pathTag.name, "path");
-  });
-
-  test("joins path segments from template literal", () => {
-    const dir = "foo";
-    const file = "bar.txt";
-    const actual = pathTag`${dir}/${file}`;
-    assert.strictEqual(actual, "foo/bar.txt");
-  });
-
-  test("works with static path strings", () => {
-    const actual = pathTag`foo/bar/baz.txt`;
-    assert.strictEqual(actual, "foo/bar/baz.txt");
-  });
-});
 
 describe("file()", () => {
   test("has correct name", () => {
@@ -125,31 +100,4 @@ describe("file()", () => {
   });
 });
 
-describe("glob()", () => {
-  test("has correct name", () => {
-    assert.strictEqual(glob.name, "glob");
-  });
-
-  test("returns an array", () => {
-    const result = glob("**/*.md");
-    assert.ok(Array.isArray(result));
-  });
-
-  test("matches files by pattern", () => {
-    const result = glob("test/*.md");
-    assert.ok(result.some((p) => p.endsWith("test.md")));
-  });
-
-  test("accepts multiple patterns", () => {
-    const result = glob("test/*.md", "*.json");
-    assert.ok(result.some((p) => p.endsWith(".md")));
-    assert.ok(result.some((p) => p.endsWith(".json")));
-  });
-
-  test("supports exclusion patterns", () => {
-    const withAll = glob("test/*");
-    const withExclusion = glob("test/*", "!test/*.md");
-    assert.ok(withExclusion.length < withAll.length);
-  });
-});
 
