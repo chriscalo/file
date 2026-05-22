@@ -3,8 +3,7 @@ import { dirname, isAbsolute, resolve as pathResolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
-const _require = createRequire(import.meta.url);
-const _caller = _require("caller");
+const caller = createRequire(import.meta.url)("caller");
 
 /**
  * Converts a file:// URL to a filesystem path,
@@ -33,7 +32,7 @@ function toFilePath(callerUrl) {
  *   by default, or a Buffer if `encoding: null` is passed
  */
 export function file(filePath, options = {}) {
-  const callerPath = toFilePath(_caller());
+  const callerPath = toFilePath(caller());
   const absolutePath = resolve(filePath, callerPath);
   return readFileSync(absolutePath, {
     encoding: "utf-8",
@@ -60,7 +59,7 @@ export function resolve(pathString, callerPath) {
   // 2. relative path (starts with ./ or ../) => use path.resolve()
   // 3. module path => use require.resolve() for node_modules lookup
   if (callerPath === undefined) {
-    callerPath = toFilePath(_caller());
+    callerPath = toFilePath(caller());
   }
 
   if (isAbsolute(pathString)) {
