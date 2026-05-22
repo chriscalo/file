@@ -57,14 +57,14 @@ export default file;
  * @returns {string} Absolute filesystem path
  */
 export function resolve(pathString, callerPath) {
-  // Three cases:
-  // 1. absolute path (starts with /) => use as is
-  // 2. relative path (starts with ./ or ../) => use path.resolve()
-  // 3. module path => use require.resolve() for node_modules lookup
   if (callerPath === undefined) {
     callerPath = toFilePath(caller());
   }
 
+  // Three cases:
+  // 1. absolute path (starts with /) => use as is
+  // 2. relative path (starts with ./ or ../) => use path.resolve()
+  // 3. module path => use require.resolve() for node_modules lookup
   const isAbsolute = isAbsolutePath(pathString);
   const isRelative = !isAbsolute && (
     pathString.startsWith("./") || pathString.startsWith("../")
