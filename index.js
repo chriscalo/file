@@ -1,29 +1,29 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { createRequire } from "module";
+import { readFileSync } from "node:fs";
+import {
+  dirname,
+  isAbsolute as isAbsolutePath,
+  resolve as pathResolve,
+} from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import caller from "caller";
 
-const _thisFile = fileURLToPath(import.meta.url);
-
-function getCallerPath() {
-  const frames = new Error().stack.split('\n');
-  for (const frame of frames.slice(1)) {
-    const match = frame.match(/\(?(file:\/\/[^\s:)]+)/);
-    if (match) {
-      try {
-        const filePath = fileURLToPath(match[1]);
-        if (filePath !== _thisFile) {
-          return filePath;
-        }
-      } catch {}
-    }
-  }
-  return null;
-}
-
+/**
+ * Reads a file and returns its contents, resolving the path
+ * relative to the calling module.
+ *
+ * @param {string} filePath - Absolute path, relative path
+ *   (`./` or `../`), or module path
+ * @param {{ encoding?: BufferEncoding | null, flag?: string }}
+ *   [options] - Options passed to `fs.readFileSync`; defaults
+ *   to UTF-8 encoding
+ * @returns {string | Buffer} File contents as a UTF-8 string
+ *   by default, or a Buffer if `encoding: null` is passed
+ */
 export function file(filePath, options = {}) {
-  const absolutePath = resolve(filePath, getCallerPath());
-  return fs.readFileSync(absolutePath, {
+  const callerPath = toFilePath(caller());
+  const absolutePath = resolve(filePath, callerPath);
+  return readFileSync(absolutePath, {
     encoding: "utf-8",
     ...options,
   });
@@ -31,29 +31,51 @@ export function file(filePath, options = {}) {
 
 export default file;
 
-// Three cases:
-// 1. absolute path (starts with /) => use as is
-// 2. relative path (starts with ./ or ../) => use path.resolve()
-// 3. module path: use require.resolve()
+/**
+ * Resolves a file path to an absolute path, relative to the
+ * calling module.
+ *
+ * @param {string} pathString - Absolute path, relative path
+ *   (`./` or `../`), or module path (resolved via
+ *   `require.resolve`)
+ * @param {string} [callerPath] - Override the caller's
+ *   filesystem path; defaults to the auto-detected caller
+ * @returns {string} Absolute filesystem path
+ */
 export function resolve(pathString, callerPath) {
   if (callerPath === undefined) {
-    callerPath = getCallerPath();
+    callerPath = toFilePath(caller());
   }
 
-  const { dir } = path.parse(pathString);
-  const isAbsolute = path.isAbsolute(pathString);
-  const isRelative = !isAbsolute && String(dir).startsWith(".");
+  // Three cases:
+  // 1. absolute path (starts with /) => use as is
+  // 2. relative path (starts with ./ or ../) => use path.resolve()
+  // 3. module path => use require.resolve() for node_modules lookup
+  const isAbsolute = isAbsolutePath(pathString);
+  const isRelative = !isAbsolute && (
+    pathString.startsWith("./") || pathString.startsWith("../")
+  );
   const isModule = !isAbsolute && !isRelative;
 
   if (isAbsolute) {
     return pathString;
   } else if (isRelative) {
-    const callerDir = path.dirname(callerPath);
-    return path.resolve(callerDir, pathString);
+    return pathResolve(dirname(callerPath), pathString);
   } else if (isModule) {
     return createRequire(callerPath).resolve(pathString);
-  } else {
-    const msg = `Can't resolve absolute path: ${pathString}`;
-    throw new Error(msg);
+  }
+}
+
+/**
+ * Converts a file:// URL to a filesystem path,
+ * passing through plain paths unchanged.
+ * @param {string} callerUrl - A file:// URL or filesystem path
+ * @returns {string} Filesystem path
+ */
+function toFilePath(callerUrl) {
+  try {
+    return fileURLToPath(callerUrl);
+  } catch {
+    return callerUrl;
   }
 }
