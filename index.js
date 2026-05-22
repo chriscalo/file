@@ -1,5 +1,9 @@
 import { readFileSync } from "node:fs";
-import { dirname, isAbsolute, resolve as pathResolve } from "node:path";
+import {
+  dirname,
+  isAbsolute as isAbsolutePath,
+  resolve as pathResolve,
+} from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import caller from "caller";
@@ -61,16 +65,17 @@ export function resolve(pathString, callerPath) {
     callerPath = toFilePath(caller());
   }
 
-  if (isAbsolute(pathString)) {
+  const isAbsolute = isAbsolutePath(pathString);
+  const isRelative = !isAbsolute && (
+    pathString.startsWith("./") || pathString.startsWith("../")
+  );
+  const isModule = !isAbsolute && !isRelative;
+
+  if (isAbsolute) {
     return pathString;
-  }
-
-  const isRelative =
-    pathString.startsWith("./") || pathString.startsWith("../");
-
-  if (isRelative) {
+  } else if (isRelative) {
     return pathResolve(dirname(callerPath), pathString);
-  } else {
+  } else if (isModule) {
     return createRequire(callerPath).resolve(pathString);
   }
 }
