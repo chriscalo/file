@@ -3,7 +3,8 @@ import { dirname, isAbsolute, resolve as pathResolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
-const caller = createRequire(import.meta.url)("caller");
+const require = createRequire(import.meta.url);
+const caller = require("caller");
 
 /**
  * Converts a file:// URL to a filesystem path,
