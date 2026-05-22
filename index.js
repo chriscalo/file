@@ -9,20 +9,6 @@ import { createRequire } from "node:module";
 import caller from "caller";
 
 /**
- * Converts a file:// URL to a filesystem path,
- * passing through plain paths unchanged.
- * @param {string} callerUrl - A file:// URL or filesystem path
- * @returns {string} Filesystem path
- */
-function toFilePath(callerUrl) {
-  try {
-    return fileURLToPath(callerUrl);
-  } catch {
-    return callerUrl;
-  }
-}
-
-/**
  * Reads a file and returns its contents, resolving the path
  * relative to the calling module.
  *
@@ -77,5 +63,19 @@ export function resolve(pathString, callerPath) {
     return pathResolve(dirname(callerPath), pathString);
   } else if (isModule) {
     return createRequire(callerPath).resolve(pathString);
+  }
+}
+
+/**
+ * Converts a file:// URL to a filesystem path,
+ * passing through plain paths unchanged.
+ * @param {string} callerUrl - A file:// URL or filesystem path
+ * @returns {string} Filesystem path
+ */
+function toFilePath(callerUrl) {
+  try {
+    return fileURLToPath(callerUrl);
+  } catch {
+    return callerUrl;
   }
 }
