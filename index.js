@@ -72,7 +72,7 @@ function resolveUrl(filePath, callerUrl) {
     return filePath;
   } else if (isRelative) {
     return new URL(filePath, callerUrl);
-  } else {
+  } else if (isModule) {
     return createRequire(callerUrl).resolve(filePath);
   }
 }
