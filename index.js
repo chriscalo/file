@@ -33,29 +33,31 @@ export default file;
  *   `require.resolve`)
  * @param {string} [callerPath] - Override the caller's
  *   filesystem path; defaults to the auto-detected caller
- * @returns {string} Absolute filesystem path
+ * @returns {string} Absolute filesystem path, or bare module
+ *   name for Node.js built-ins (e.g. `"path"`, `"fs"`)
  */
 export function resolve(pathString, callerPath) {
   const ref = callerPath !== undefined ? callerPath : caller();
   const callerUrl = toCallerUrl(ref);
-  const resolved = resolveUrl(pathString, callerUrl);
-  return resolved instanceof URL ? fileURLToPath(resolved) : resolved;
+  const url = resolveUrl(pathString, callerUrl);
+  return url.protocol === "node:" ? url.pathname : fileURLToPath(url);
 }
 
 /**
- * Converts a file:// URL or filesystem path to a file:// URL.
- * @param {string} path - A file:// URL or filesystem path
- * @returns {string} file:// URL
+ * Converts a file:// URL string or filesystem path to a URL object.
+ * @param {string} path - A file:// URL string or filesystem path
+ * @returns {URL}
  */
 function toCallerUrl(path) {
-  return path.startsWith("file://") ? path : pathToFileURL(path).href;
+  return path.startsWith("file://") ? new URL(path) : pathToFileURL(path);
 }
 
 /**
- * Resolves a file path against a caller URL.
+ * Resolves a file path against a caller URL, always returning a URL.
+ * Node.js built-in modules are returned as `node:<name>` URLs.
  * @param {string} filePath - Absolute path, relative path, or module path
- * @param {string} callerUrl - file:// URL of the calling module
- * @returns {string | URL} Resolved path or URL
+ * @param {URL} callerUrl - file:// URL of the calling module
+ * @returns {URL}
  */
 function resolveUrl(filePath, callerUrl) {
   const isAbsolute = filePath.startsWith("/");
@@ -65,14 +67,16 @@ function resolveUrl(filePath, callerUrl) {
   const isModule = !isAbsolute && !isRelative;
 
   // Three cases:
-  // 1. absolute path (starts with /) => use as is
-  // 2. relative path (starts with ./ or ../) => use URL resolution
+  // 1. absolute path (starts with /) => convert to file:// URL
+  // 2. relative path (starts with ./ or ../) => resolve against caller URL
   // 3. module path => use require.resolve() for node_modules lookup
   if (isAbsolute) {
-    return filePath;
+    return pathToFileURL(filePath);
   } else if (isRelative) {
     return new URL(filePath, callerUrl);
   } else if (isModule) {
-    return createRequire(callerUrl).resolve(filePath);
+    const resolved = createRequire(callerUrl).resolve(filePath);
+    // built-in modules resolve to their bare name (e.g. "path"), not a file path
+    return resolved.startsWith("/") ? pathToFileURL(resolved) : new URL(`node:${resolved}`);
   }
 }
