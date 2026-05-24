@@ -5,11 +5,11 @@ import caller from "caller";
 
 /**
  * Converts a file:// URL or filesystem path to a file:// URL.
- * @param {string} callerRef - A file:// URL or filesystem path
+ * @param {string} path - A file:// URL or filesystem path
  * @returns {string} file:// URL
  */
-function toCallerUrl(callerRef) {
-  return callerRef.startsWith("file://") ? callerRef : pathToFileURL(callerRef).href;
+function toCallerUrl(path) {
+  return path.startsWith("file://") ? path : pathToFileURL(path).href;
 }
 
 /**
@@ -33,7 +33,7 @@ function resolveUrl(filePath, callerUrl) {
     return filePath;
   } else if (isRelative) {
     return new URL(filePath, callerUrl);
-  } else if (isModule) {
+  } else {
     return createRequire(callerUrl).resolve(filePath);
   }
 }
