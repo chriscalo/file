@@ -15,13 +15,12 @@ import caller from "caller";
  * @returns {string | Buffer} File contents as a UTF-8 string
  *   by default, or a Buffer if `encoding: null` is passed
  */
-function file(filePath, options = {}) {
+export function file(filePath, options = {}) {
   const callerUrl = toCallerUrl(caller());
   const resolved = resolveUrl(filePath, callerUrl);
   return readFileSync(resolved, { encoding: "utf-8", ...options });
 }
 
-export { file };
 export default file;
 
 /**
