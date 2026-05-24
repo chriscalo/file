@@ -15,12 +15,13 @@ import caller from "caller";
  * @returns {string | Buffer} File contents as a UTF-8 string
  *   by default, or a Buffer if `encoding: null` is passed
  */
-export function file(filePath, options = {}) {
+function file(filePath, options = {}) {
   const callerUrl = toCallerUrl(caller());
   const resolved = resolveUrl(filePath, callerUrl);
   return readFileSync(resolved, { encoding: "utf-8", ...options });
 }
 
+export { file };
 export default file;
 
 /**
@@ -35,7 +36,8 @@ export default file;
  * @returns {string} Absolute filesystem path
  */
 export function resolve(pathString, callerPath) {
-  const callerUrl = toCallerUrl(callerPath !== undefined ? callerPath : caller());
+  const ref = callerPath !== undefined ? callerPath : caller();
+  const callerUrl = toCallerUrl(ref);
   const resolved = resolveUrl(pathString, callerUrl);
   return resolved instanceof URL ? fileURLToPath(resolved) : resolved;
 }
