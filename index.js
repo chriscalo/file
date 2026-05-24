@@ -18,7 +18,8 @@ import caller from "caller";
 export function file(filePath, options = {}) {
   const callerUrl = toCallerUrl(caller());
   const resolved = resolveUrl(filePath, callerUrl);
-  return readFileSync(resolved, { encoding: "utf-8", ...options });
+  const readOptions = { encoding: "utf-8", ...options };
+  return readFileSync(resolved, readOptions);
 }
 
 export default file;
